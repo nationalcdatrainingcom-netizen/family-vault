@@ -384,9 +384,20 @@ document.addEventListener('click', resetLockTimer);
 document.addEventListener('keydown', resetLockTimer);
 
 async function api(method, url, body) {
-  const opts = { method, headers:{'Content-Type':'application/json'}, credentials:'same-origin' };
+  const opts = { method, headers:{'Content-Type':'application/json'}, credentials:'include' };
   if (body) opts.body = JSON.stringify(body);
-  return (await fetch(url, opts)).json();
+  const res = await fetch(url, opts);
+  // If session expired mid-use, send back to login gracefully
+  if (res.status === 401) {
+    masterKey = null; currentUser = null;
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('master-screen').classList.remove('active');
+    document.getElementById('auth-screen').style.display = 'flex';
+    const errEl = document.getElementById('login-error');
+    showEl(errEl, 'Your session expired. Please sign in again.');
+    throw new Error('Session expired');
+  }
+  return res.json();
 }
 
 // Check session on load
