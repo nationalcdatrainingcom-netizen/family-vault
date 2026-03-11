@@ -144,27 +144,38 @@ app.get('/api/me', requireAuth, (req, res) => {
   res.json({ id: user.id, name: user.name, username: user.username, role: user.role });
 });
 
+// ─── MASTER PASSWORD VERIFIER (stores encrypted proof, never the password) ────
+app.post('/api/verifier', requireAuth, (req, res) => {
+  const { verifier } = req.body;
+  if (!verifier) return res.json({ error: 'Verifier required.' });
+  const db = loadDB();
+  const user = db.users.find(u => u.id === req.session.userId);
+  if (!user) return res.status(404).json({ error: 'User not found.' });
+  user.verifier = verifier;
+  saveDB(db);
+  res.json({ success: true });
+});
+
+app.get('/api/verifier', requireAuth, (req, res) => {
+  const db = loadDB();
+  const user = db.users.find(u => u.id === req.session.userId);
+  if (!user) return res.status(404).json({ error: 'User not found.' });
+  res.json({ verifier: user.verifier || null });
+});
+
 // ─── ENTRY ROUTES ─────────────────────────────────────────────────
+// Entries are pre-encrypted by the browser (zero-knowledge)
 app.get('/api/entries', requireAuth, (req, res) => {
   const db = loadDB();
-  const raw = db.entries.filter(e => e.userId === req.session.userId);
-  const decrypted = raw.map(e => {
-    const data = decryptEntry(e.data);
-    return data ? { id: e.id, userId: e.userId, ...data } : null;
-  }).filter(Boolean);
-  res.json(decrypted);
+  const entries = db.entries.filter(e => e.userId === req.session.userId);
+  res.json(entries); // send encrypted blobs — browser decrypts
 });
 
 app.post('/api/entries', requireAuth, (req, res) => {
   const db = loadDB();
-  const { name, category, url, username, password, pin, notes } = req.body;
-  if (!name) return res.json({ error: 'Name is required.' });
-
-  const entry = {
-    id: uuidv4(),
-    userId: req.session.userId,
-    data: encryptEntry({ name, category, url, username, password, pin, notes, updated: new Date().toISOString() })
-  };
+  const { data } = req.body; // pre-encrypted by browser
+  if (!data) return res.json({ error: 'Entry data required.' });
+  const entry = { id: uuidv4(), userId: req.session.userId, data };
   db.entries.push(entry);
   saveDB(db);
   res.json({ success: true, id: entry.id });
@@ -174,9 +185,7 @@ app.put('/api/entries/:id', requireAuth, (req, res) => {
   const db = loadDB();
   const idx = db.entries.findIndex(e => e.id === req.params.id && e.userId === req.session.userId);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
-
-  const { name, category, url, username, password, pin, notes } = req.body;
-  db.entries[idx].data = encryptEntry({ name, category, url, username, password, pin, notes, updated: new Date().toISOString() });
+  db.entries[idx].data = req.body.data;
   saveDB(db);
   res.json({ success: true });
 });
@@ -185,26 +194,21 @@ app.delete('/api/entries/:id', requireAuth, (req, res) => {
   const db = loadDB();
   const entry = db.entries.find(e => e.id === req.params.id);
   if (!entry) return res.status(404).json({ error: 'Not found' });
-
-  // Owner or admin can delete
   const user = db.users.find(u => u.id === req.session.userId);
   if (entry.userId !== req.session.userId && user.role !== 'admin')
     return res.status(403).json({ error: 'Not allowed' });
-
   db.entries = db.entries.filter(e => e.id !== req.params.id);
   saveDB(db);
   res.json({ success: true });
 });
 
-// Admin: get all entries
+// Admin: get all encrypted blobs — browser tries to decrypt with admin key
 app.get('/api/admin/entries', requireAuth, requireAdmin, (req, res) => {
   const db = loadDB();
   const all = db.entries.map(e => {
-    const data = decryptEntry(e.data);
-    if (!data) return null;
     const owner = db.users.find(u => u.id === e.userId);
-    return { id: e.id, userId: e.userId, ownerName: owner ? owner.name : 'Unknown', ...data };
-  }).filter(Boolean);
+    return { id: e.id, userId: e.userId, ownerName: owner ? owner.name : 'Unknown', data: e.data };
+  });
   res.json(all);
 });
 
