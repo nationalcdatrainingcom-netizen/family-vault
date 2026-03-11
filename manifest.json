@@ -1,12 +1,14 @@
 {
   "name": "Family Vault",
   "short_name": "Family Vault",
-  "description": "Secure family password manager",
+  "description": "Secure zero-knowledge encrypted password manager for families",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#1a2744",
   "theme_color": "#1a2744",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
+  "categories": ["utilities", "productivity"],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -19,6 +21,13 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "My Vault",
+      "url": "/",
+      "description": "Open your password vault"
     }
   ]
 }
