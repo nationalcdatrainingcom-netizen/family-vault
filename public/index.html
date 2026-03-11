@@ -154,13 +154,28 @@
   .cat-section-body.open { display: block; }
   .cat-section-body .vault-grid { gap: 12px; }
   /* Accent bar on left of section header by category */
-  .cat-accent-banking  { border-left: 4px solid #2b6cb0; }
-  .cat-accent-email    { border-left: 4px solid #c05621; }
-  .cat-accent-social   { border-left: 4px solid #553c9a; }
-  .cat-accent-medical  { border-left: 4px solid #276749; }
-  .cat-accent-shopping { border-left: 4px solid #c53030; }
-  .cat-accent-government { border-left: 4px solid #1a365d; }
-  .cat-accent-other    { border-left: 4px solid var(--gold); }
+  .cat-accent-banking     { border-left: 4px solid #2b6cb0; }
+  .cat-accent-email       { border-left: 4px solid #c05621; }
+  .cat-accent-social      { border-left: 4px solid #553c9a; }
+  .cat-accent-medical     { border-left: 4px solid #276749; }
+  .cat-accent-shopping    { border-left: 4px solid #c53030; }
+  .cat-accent-government  { border-left: 4px solid #1a365d; }
+  .cat-accent-creditcards { border-left: 4px solid #b7791f; }
+  .cat-accent-utilities   { border-left: 4px solid #2c7a7b; }
+  .cat-accent-securenotes { border-left: 4px solid #6b46c1; }
+  .cat-accent-other       { border-left: 4px solid var(--gold); }
+  /* Secure notes card styling */
+  .note-field { display:flex; flex-direction:column; padding:8px 0; border-bottom:1px solid var(--border); gap:4px; }
+  .note-field:last-of-type { border-bottom:none; }
+  .note-field-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .note-field-value { font-size:13px; color:var(--text); font-family:monospace; display:flex; align-items:center; gap:8px; }
+  .note-field-masked { letter-spacing:3px; color:var(--muted); }
+  .secure-note-badge { display:inline-flex; align-items:center; gap:4px; background:rgba(107,70,193,0.1); border:1px solid rgba(107,70,193,0.2); color:#6b46c1; border-radius:20px; padding:2px 8px; font-size:10px; font-weight:600; margin-bottom:8px; }
+  /* Entry type toggle */
+  .type-toggle { display:flex; gap:0; margin-bottom:20px; border:1.5px solid var(--border); border-radius:10px; overflow:hidden; }
+  .type-toggle-btn { flex:1; padding:10px; border:none; background:transparent; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; color:var(--muted); transition:all 0.2s; }
+  .type-toggle-btn.active { background:var(--navy); color:white; }
+  .type-toggle-btn:not(.active):hover { background:var(--cream); color:var(--navy); }
   .spinner{text-align:center;padding:40px;color:var(--muted);font-size:14px;grid-column:1/-1;}
   .cat-banking{color:#2b6cb0}.cat-email{color:#c05621}.cat-social{color:#553c9a}
   .cat-medical{color:#276749}.cat-shopping{color:#c53030}.cat-government{color:#1a365d}.cat-other{color:var(--slate)}
@@ -267,7 +282,7 @@
 
     <div id="tab-my-vault">
       <div class="section-header">
-        <h2 class="section-title">My Passwords</h2>
+        <h2 class="section-title">My Vault</h2>
         <button class="btn btn-gold btn-sm" onclick="showTab('add-entry')">+ Add New</button>
       </div>
       <div class="search-bar"><span class="search-icon">🔍</span><input type="text" id="search-input" placeholder="Search passwords…" oninput="renderVault()"></div>
@@ -276,32 +291,69 @@
 
     <div id="tab-add-entry" style="display:none;">
       <h2 class="section-title" id="form-heading" style="margin-bottom:22px;">Add New Entry</h2>
-      <div style="max-width:520px;background:var(--warm-white);border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:var(--shadow);">
+      <div style="max-width:560px;background:var(--warm-white);border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:var(--shadow);">
         <input type="hidden" id="edit-id">
-        <div class="form-group"><label>Entry Name *</label><input type="text" id="f-name" placeholder="e.g. Chase Bank, Gmail, Netflix"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div class="form-group"><label>Category</label>
-            <select id="f-category">
-              <option value="Banking">🏦 Banking</option><option value="Email">📧 Email</option>
-              <option value="Social">📱 Social Media</option><option value="Medical">🏥 Medical</option>
-              <option value="Shopping">🛒 Shopping</option><option value="Government">🏛️ Government</option>
-              <option value="Other" selected>📁 Other</option>
+        <input type="hidden" id="f-type" value="password">
+
+        <!-- Entry type toggle -->
+        <div class="type-toggle" id="type-toggle">
+          <button class="type-toggle-btn active" onclick="setEntryType('password')" id="toggle-password">🔑 Password / Login</button>
+          <button class="type-toggle-btn" onclick="setEntryType('note')" id="toggle-note">🔒 Secure Note</button>
+        </div>
+
+        <!-- PASSWORD ENTRY FIELDS -->
+        <div id="password-fields">
+          <div class="form-group"><label>Entry Name *</label><input type="text" id="f-name" placeholder="e.g. Chase Bank, Gmail, Netflix"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label>Category</label>
+              <select id="f-category">
+                <option value="Banking">🏦 Banking</option>
+                <option value="Credit Cards">💳 Credit Cards</option>
+                <option value="Email">📧 Email</option>
+                <option value="Social">📱 Social Media</option>
+                <option value="Medical">🏥 Medical</option>
+                <option value="Shopping">🛒 Shopping</option>
+                <option value="Utilities">💡 Utilities</option>
+                <option value="Government">🏛️ Government</option>
+                <option value="Other" selected>📁 Other</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Website (optional)</label><input type="url" id="f-url" placeholder="https://…"></div>
+          </div>
+          <div class="form-group"><label>Username / Email</label><input type="text" id="f-username" placeholder="Login username or email"></div>
+          <div class="form-group">
+            <label>Password</label>
+            <div class="pw-row">
+              <input type="text" id="f-password" placeholder="Password" oninput="checkStrength(this.value)">
+              <button class="gen-btn" onclick="generatePassword()">⚡ Generate</button>
+            </div>
+            <div class="strength-bar" id="strength-bar"></div>
+            <div class="strength-label" id="strength-label"></div>
+          </div>
+          <div class="form-group"><label>PIN (if applicable)</label><input type="text" id="f-pin" placeholder="e.g. ATM PIN, security code"></div>
+          <div class="form-group"><label>Notes / Hints</label><textarea id="f-notes" placeholder="Security questions, account numbers, reminders…"></textarea></div>
+        </div>
+
+        <!-- SECURE NOTE FIELDS -->
+        <div id="note-fields" style="display:none;">
+          <div style="background:rgba(107,70,193,0.06);border:1px solid rgba(107,70,193,0.2);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:13px;color:#6b46c1;line-height:1.6;">
+            🔒 Secure Notes are encrypted just like passwords. Use this for SSNs, license numbers, passport info, insurance IDs, and any sensitive information that isn't a login.
+          </div>
+          <div class="form-group"><label>Note Title *</label><input type="text" id="fn-title" placeholder="e.g. Social Security Numbers, Passport Info"></div>
+          <div class="form-group"><label>Note Type</label>
+            <select id="fn-notetype" onchange="updateNoteFields()">
+              <option value="identity">🪪 Identity (SSN, Driver's License, Passport)</option>
+              <option value="insurance">🏥 Insurance / Medical IDs</option>
+              <option value="financial">💰 Financial Account Numbers</option>
+              <option value="vehicle">🚗 Vehicle (VIN, Plate, Title)</option>
+              <option value="custom">📝 Custom Fields</option>
             </select>
           </div>
-          <div class="form-group"><label>Website (optional)</label><input type="url" id="f-url" placeholder="https://…"></div>
+          <!-- Dynamic note fields container -->
+          <div id="note-dynamic-fields"></div>
+          <div class="form-group"><label>Additional Notes</label><textarea id="fn-extra" placeholder="Any other details…"></textarea></div>
         </div>
-        <div class="form-group"><label>Username / Email</label><input type="text" id="f-username" placeholder="Login username or email"></div>
-        <div class="form-group">
-          <label>Password</label>
-          <div class="pw-row">
-            <input type="text" id="f-password" placeholder="Password" oninput="checkStrength(this.value)">
-            <button class="gen-btn" onclick="generatePassword()">⚡ Generate</button>
-          </div>
-          <div class="strength-bar" id="strength-bar"></div>
-          <div class="strength-label" id="strength-label"></div>
-        </div>
-        <div class="form-group"><label>PIN (if applicable)</label><input type="text" id="f-pin" placeholder="e.g. ATM PIN, security code"></div>
-        <div class="form-group"><label>Notes / Hints</label><textarea id="f-notes" placeholder="Security questions, account numbers, reminders…"></textarea></div>
+
         <div class="modal-actions">
           <button class="btn btn-outline" onclick="clearForm();showTab('my-vault')">Cancel</button>
           <button class="btn btn-primary" onclick="saveEntry()">Save Entry</button>
@@ -408,7 +460,7 @@ const ZK = {
 // STATE
 // ══════════════════════════════════════════════════════
 let currentUser = null, masterKey = null, myEntries = [], allEntries = [];
-const catIcons = {Banking:'🏦',Email:'📧',Social:'📱',Medical:'🏥',Shopping:'🛒',Government:'🏛️',Other:'📁'};
+const catIcons = {Banking:'🏦','Credit Cards':'💳',Email:'📧',Social:'📱',Medical:'🏥',Shopping:'🛒',Utilities:'💡',Government:'🏛️','Secure Notes':'🔒',Other:'📁'};
 
 let lockTimer = null;
 function resetLockTimer() { clearTimeout(lockTimer); lockTimer = setTimeout(lockVault, 15*60*1000); }
@@ -558,17 +610,40 @@ async function loadAllEntries() {
 
 async function saveEntry() {
   const id=document.getElementById('edit-id').value;
-  const plain={
-    name:document.getElementById('f-name').value.trim(),
-    category:document.getElementById('f-category').value,
-    url:document.getElementById('f-url').value.trim(),
-    username:document.getElementById('f-username').value.trim(),
-    password:document.getElementById('f-password').value,
-    pin:document.getElementById('f-pin').value.trim(),
-    notes:document.getElementById('f-notes').value.trim(),
-    updated:new Date().toISOString()
-  };
-  if(!plain.name){alert('Please enter an entry name.');return;}
+  const entryType=document.getElementById('f-type').value;
+  let plain;
+  if(entryType==='note'){
+    const title=document.getElementById('fn-title').value.trim();
+    if(!title){alert('Please enter a note title.');return;}
+    // Collect all dynamic note fields
+    const fields={};
+    document.querySelectorAll('.note-input-field').forEach(inp=>{
+      if(inp.value.trim()) fields[inp.dataset.label]=inp.value.trim();
+    });
+    plain={
+      type:'note',
+      name:title,
+      category:'Secure Notes',
+      noteType:document.getElementById('fn-notetype').value,
+      fields,
+      extra:document.getElementById('fn-extra').value.trim(),
+      updated:new Date().toISOString()
+    };
+  } else {
+    const name=document.getElementById('f-name').value.trim();
+    if(!name){alert('Please enter an entry name.');return;}
+    plain={
+      type:'password',
+      name,
+      category:document.getElementById('f-category').value,
+      url:document.getElementById('f-url').value.trim(),
+      username:document.getElementById('f-username').value.trim(),
+      password:document.getElementById('f-password').value,
+      pin:document.getElementById('f-pin').value.trim(),
+      notes:document.getElementById('f-notes').value.trim(),
+      updated:new Date().toISOString()
+    };
+  }
   const encData=await ZK.encrypt(plain,masterKey);
   const d=id?await api('PUT',`/api/entries/${id}`,{data:encData}):await api('POST','/api/entries',{data:encData});
   if(d.error){alert(d.error);return;}
@@ -578,13 +653,28 @@ async function saveEntry() {
 function editEntry(id) {
   const e=myEntries.find(x=>x.id===id); if(!e) return;
   document.getElementById('edit-id').value=e.id;
-  document.getElementById('f-name').value=e.name||'';
-  document.getElementById('f-category').value=e.category||'Other';
-  document.getElementById('f-url').value=e.url||'';
-  document.getElementById('f-username').value=e.username||'';
-  document.getElementById('f-password').value=e.password||'';
-  document.getElementById('f-pin').value=e.pin||'';
-  document.getElementById('f-notes').value=e.notes||'';
+  if(e.type==='note'){
+    setEntryType('note');
+    document.getElementById('fn-title').value=e.name||'';
+    document.getElementById('fn-notetype').value=e.noteType||'custom';
+    updateNoteFields();
+    // Restore saved field values
+    setTimeout(()=>{
+      document.querySelectorAll('.note-input-field').forEach(inp=>{
+        if(e.fields&&e.fields[inp.dataset.label]) inp.value=e.fields[inp.dataset.label];
+      });
+    },50);
+    document.getElementById('fn-extra').value=e.extra||'';
+  } else {
+    setEntryType('password');
+    document.getElementById('f-name').value=e.name||'';
+    document.getElementById('f-category').value=e.category||'Other';
+    document.getElementById('f-url').value=e.url||'';
+    document.getElementById('f-username').value=e.username||'';
+    document.getElementById('f-password').value=e.password||'';
+    document.getElementById('f-pin').value=e.pin||'';
+    document.getElementById('f-notes').value=e.notes||'';
+  }
   document.getElementById('form-heading').textContent='Edit Entry';
   showTab('add-entry');
 }
@@ -595,24 +685,68 @@ async function deleteEntry(id) {
 }
 
 function clearForm() {
-  ['edit-id','f-name','f-url','f-username','f-password','f-pin','f-notes'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
+  ['edit-id','f-name','f-url','f-username','f-password','f-pin','f-notes','fn-title','fn-extra'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
   document.getElementById('f-category').value='Other';
+  document.getElementById('f-type').value='password';
   document.getElementById('form-heading').textContent='Add New Entry';
   document.getElementById('strength-bar').className='strength-bar';
   document.getElementById('strength-label').textContent='';
+  setEntryType('password');
+}
+
+// ── Entry type toggle ────────────────────────────────────────────────────────
+function setEntryType(type) {
+  document.getElementById('f-type').value=type;
+  document.getElementById('password-fields').style.display=type==='password'?'block':'none';
+  document.getElementById('note-fields').style.display=type==='note'?'block':'none';
+  document.getElementById('toggle-password').classList.toggle('active',type==='password');
+  document.getElementById('toggle-note').classList.toggle('active',type==='note');
+  if(type==='note') updateNoteFields();
+}
+
+// ── Secure note field templates ──────────────────────────────────────────────
+const NOTE_TEMPLATES = {
+  identity: [
+    'Social Security Number','Driver's License Number','Driver's License State',
+    'Passport Number','Passport Expiration','Date of Birth','Place of Birth'
+  ],
+  insurance: [
+    'Insurance Company','Policy Number','Group Number','Member ID',
+    'Primary Care Doctor','Insurance Phone','Effective Date'
+  ],
+  financial: [
+    'Bank / Institution','Account Number','Routing Number',
+    'Account Type','Branch Location'
+  ],
+  vehicle: [
+    'Make & Model','Year','VIN','License Plate',
+    'Title Number','Insurance Policy','Registration Expiration'
+  ],
+  custom: ['Label 1','Label 2','Label 3','Label 4','Label 5']
+};
+
+function updateNoteFields() {
+  const type=document.getElementById('fn-notetype').value;
+  const fields=NOTE_TEMPLATES[type]||NOTE_TEMPLATES.custom;
+  const container=document.getElementById('note-dynamic-fields');
+  container.innerHTML=fields.map(label=>`
+    <div class="form-group">
+      <label>${escH(label)}</label>
+      <input type="text" class="note-input-field" data-label="${escAttr(label)}" placeholder="Enter ${escH(label.toLowerCase())}…">
+    </div>`).join('');
 }
 
 // ══════════════════════════════════════════════════════
 // RENDER
 // ══════════════════════════════════════════════════════
 // Category display order and metadata
-const CAT_ORDER = ['Banking','Email','Social','Medical','Shopping','Government','Other'];
-const CAT_ACCENT = {Banking:'banking',Email:'email',Social:'social',Medical:'medical',Shopping:'shopping',Government:'government',Other:'other'};
+const CAT_ORDER = ['Banking','Credit Cards','Email','Social','Medical','Shopping','Utilities','Government','Secure Notes','Other'];
+const CAT_ACCENT = {Banking:'banking','Credit Cards':'creditcards',Email:'email',Social:'social',Medical:'medical',Shopping:'shopping',Utilities:'utilities',Government:'government','Secure Notes':'securenotes',Other:'other'};
 
 function renderVault() {
   const q=(document.getElementById('search-input').value||'').toLowerCase();
   const entries=myEntries
-    .filter(e=>!q||e.name.toLowerCase().includes(q)||(e.username||'').toLowerCase().includes(q)||e.category.toLowerCase().includes(q))
+    .filter(e=>!q||e.name.toLowerCase().includes(q)||(e.username||'').toLowerCase().includes(q)||e.category.toLowerCase().includes(q)||Object.values(e.fields||{}).some(v=>v.toLowerCase().includes(q)))
     .sort((a,b)=>a.name.localeCompare(b.name)); // alphabetical within each group
   const grid=document.getElementById('vault-grid');
   if(!entries.length){
@@ -702,9 +836,11 @@ function renderFamilyVault() {
 function cardHTML(e) {
   const canEdit=currentUser.role==='admin'||e.userId===currentUser.id;
   const locked=e._locked;
+  const catKey=(e.category||'other').toLowerCase().replace(/\s+/g,'');
+  if(!locked && e.type==='note') return noteCardHTML(e, canEdit);
   return `<div class="vault-card">
     ${e.ownerName&&e.userId!==currentUser.id?`<div><span class="owner-tag">${escH(e.ownerName)}</span></div>`:''}
-    <div class="card-category cat-${(e.category||'other').toLowerCase()}">${catIcons[e.category]||'📁'} ${escH(e.category||'Other')}</div>
+    <div class="card-category cat-${catKey}">${catIcons[e.category]||'📁'} ${escH(e.category||'Other')}</div>
     <div class="card-title">${escH(e.name)}</div>
     ${locked?`<div style="font-size:12px;color:var(--muted);padding:6px 0;">🔒 Encrypted with member's master password</div>`:''}
     ${!locked&&e.url?`<div class="card-field"><span class="field-label">URL</span><a href="${escH(e.url)}" target="_blank" rel="noopener" class="field-value" style="color:var(--gold-dark);text-decoration:none;font-size:12px;">${escH(e.url)}</a></div>`:''}
@@ -714,6 +850,33 @@ function cardHTML(e) {
     ${!locked&&e.notes?`<div class="card-note">📝 ${escH(e.notes)}</div>`:''}
     ${canEdit&&!locked?`<div class="card-actions"><button class="btn btn-outline btn-sm" onclick="editEntry('${e.id}')">✏️ Edit</button><button class="btn btn-danger" onclick="deleteEntry('${e.id}')">🗑 Delete</button></div>`:''}
   </div>`;
+}
+
+function noteCardHTML(e, canEdit) {
+  const fields=e.fields||{};
+  const fieldKeys=Object.keys(fields);
+  return `<div class="vault-card">
+    ${e.ownerName&&e.userId!==currentUser.id?`<div><span class="owner-tag">${escH(e.ownerName)}</span></div>`:''}
+    <div class="secure-note-badge">🔒 Secure Note</div>
+    <div class="card-title">${escH(e.name)}</div>
+    ${fieldKeys.map(label=>`
+      <div class="note-field">
+        <span class="note-field-label">${escH(label)}</span>
+        <div class="note-field-value">
+          <span class="note-field-masked" id="nf-${e.id}-${escAttr(label).replace(/[^a-z0-9]/gi,'_')}">••••••••••</span>
+          <button class="toggle-pw" onclick="toggleNoteField('nf-${e.id}-${escAttr(label).replace(/[^a-z0-9]/gi,'_')}','${escAttr(fields[label])}')">👁</button>
+          <button class="copy-btn" onclick="copyText(this,'${escAttr(fields[label])}')">Copy</button>
+        </div>
+      </div>`).join('')}
+    ${e.extra?`<div class="card-note">📝 ${escH(e.extra)}</div>`:''}
+    ${canEdit?`<div class="card-actions"><button class="btn btn-outline btn-sm" onclick="editEntry('${e.id}')">✏️ Edit</button><button class="btn btn-danger" onclick="deleteEntry('${e.id}')">🗑 Delete</button></div>`:''}
+  </div>`;
+}
+
+function toggleNoteField(id, val) {
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.textContent=el.textContent.includes('•')?val:'••••••••••';
 }
 
 // ══════════════════════════════════════════════════════
