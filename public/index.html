@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Vault</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #faf7f2;
+    --warm-white: #fffef9;
+    --gold: #c9a84c;
+    --gold-light: #e8d5a3;
+    --gold-dark: #9c7a2e;
+    --navy: #1a2744;
+    --navy-light: #243460;
+    --slate: #4a5568;
+    --text: #2d3748;
+    --muted: #718096;
+    --border: #e2d9c8;
+    --danger: #c53030;
+    --success: #276749;
+    --shadow: 0 4px 24px rgba(26,39,68,0.10);
+    --shadow-lg: 0 12px 48px rgba(26,39,68,0.16);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(201,168,76,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(26,39,68,0.06) 0%, transparent 50%);
+  }
+
+  /* ─── AUTH ─── */
+  #auth-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .auth-card { background:var(--warm-white); border:1px solid var(--border); border-radius:20px; padding:48px 44px; width:100%; max-width:420px; box-shadow:var(--shadow-lg); }
+  .vault-logo { text-align:center; margin-bottom:32px; }
+  .vault-icon { width:64px; height:64px; background:linear-gradient(135deg,var(--navy),var(--navy-light)); border-radius:16px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px; box-shadow:0 8px 24px rgba(26,39,68,0.25); }
+  .vault-logo h1 { font-family:'Playfair Display',serif; font-size:28px; font-weight:700; color:var(--navy); letter-spacing:-0.5px; }
+  .vault-logo p { font-size:13px; color:var(--muted); margin-top:4px; }
+  .form-group { margin-bottom:18px; }
+  label { display:block; font-size:12px; font-weight:500; color:var(--slate); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:7px; }
+  input[type="text"],input[type="password"],input[type="url"],select,textarea { width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px; background:var(--warm-white); color:var(--text); transition:border-color 0.2s,box-shadow 0.2s; outline:none; }
+  input:focus,select:focus,textarea:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,168,76,0.15); }
+  textarea { resize:vertical; min-height:72px; }
+  .btn { width:100%; padding:13px; border:none; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; cursor:pointer; transition:all 0.2s; }
+  .btn-primary { background:linear-gradient(135deg,var(--navy),var(--navy-light)); color:white; margin-top:8px; }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(26,39,68,0.3); }
+  .btn-gold { background:linear-gradient(135deg,var(--gold-dark),var(--gold)); color:white; }
+  .btn-gold:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(201,168,76,0.4); }
+  .btn-outline { background:transparent; border:1.5px solid var(--border); color:var(--slate); }
+  .btn-outline:hover { border-color:var(--gold); color:var(--gold-dark); }
+  .btn-danger { background:transparent; border:1.5px solid #fed7d7; color:var(--danger); padding:8px 14px; width:auto; font-size:12px; border-radius:8px; }
+  .btn-danger:hover { background:#fff5f5; }
+  .btn-sm { padding:7px 14px; width:auto; font-size:12px; border-radius:8px; }
+  .auth-switch { text-align:center; margin-top:20px; font-size:13px; color:var(--muted); }
+  .auth-switch a { color:var(--gold-dark); cursor:pointer; text-decoration:none; font-weight:500; }
+  .error-msg { background:#fff5f5; border:1px solid #fed7d7; color:var(--danger); padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:16px; display:none; }
+  .success-msg { background:#f0fff4; border:1px solid #9ae6b4; color:var(--success); padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:16px; display:none; }
+  .hint-box { margin-top:20px; padding:12px; background:var(--cream); border-radius:10px; font-size:12px; color:var(--muted); border:1px solid var(--border); }
+
+  /* ─── HEADER ─── */
+  #app { display:none; }
+  .header { background:var(--navy); padding:0 32px; display:flex; align-items:center; justify-content:space-between; height:64px; position:sticky; top:0; z-index:100; box-shadow:0 2px 16px rgba(26,39,68,0.3); }
+  .header-brand { font-family:'Playfair Display',serif; color:white; font-size:20px; display:flex; align-items:center; gap:10px; }
+  .header-brand span { color:var(--gold); }
+  .header-right { display:flex; align-items:center; gap:16px; }
+  .user-badge { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 14px; color:var(--gold-light); font-size:13px; display:flex; align-items:center; gap:6px; }
+  .btn-logout { background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.7); padding:7px 14px; border-radius:8px; font-size:12px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; }
+  .btn-logout:hover { border-color:rgba(255,255,255,0.5); color:white; }
+
+  /* ─── LAYOUT ─── */
+  .main-layout { max-width:1100px; margin:0 auto; padding:32px 24px; }
+  .tabs { display:flex; gap:4px; background:var(--warm-white); border:1px solid var(--border); border-radius:12px; padding:5px; margin-bottom:28px; width:fit-content; flex-wrap:wrap; }
+  .tab-btn { padding:9px 20px; border:none; border-radius:8px; background:transparent; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--muted); cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+  .tab-btn.active { background:var(--navy); color:white; box-shadow:0 2px 8px rgba(26,39,68,0.2); }
+  .tab-btn:not(.active):hover { color:var(--navy); background:var(--cream); }
+  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .section-title { font-family:'Playfair Display',serif; font-size:22px; color:var(--navy); font-weight:600; }
+
+  /* ─── VAULT CARDS ─── */
+  .vault-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+  .vault-card { background:var(--warm-white); border:1px solid var(--border); border-radius:14px; padding:20px; box-shadow:var(--shadow); transition:box-shadow 0.2s,transform 0.2s; position:relative; }
+  .vault-card:hover { box-shadow:var(--shadow-lg); transform:translateY(-2px); }
+  .card-category { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--gold-dark); margin-bottom:8px; }
+  .card-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:600; color:var(--navy); margin-bottom:12px; }
+  .card-field { display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); gap:8px; }
+  .card-field:last-of-type { border-bottom:none; }
+  .field-label { font-size:11px; color:var(--muted); min-width:70px; text-transform:uppercase; letter-spacing:0.5px; }
+  .field-value { font-size:13px; color:var(--text); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .field-masked { font-family:monospace; letter-spacing:2px; color:var(--muted); }
+  .copy-btn { background:var(--cream); border:1px solid var(--border); border-radius:6px; padding:3px 8px; font-size:11px; cursor:pointer; color:var(--slate); font-family:'DM Sans',sans-serif; transition:all 0.15s; flex-shrink:0; }
+  .copy-btn:hover { background:var(--gold-light); border-color:var(--gold); color:var(--gold-dark); }
+  .copy-btn.copied { background:#f0fff4; border-color:#9ae6b4; color:var(--success); }
+  .toggle-pw { background:none; border:none; cursor:pointer; color:var(--muted); padding:2px 4px; font-size:14px; transition:color 0.15s; flex-shrink:0; }
+  .toggle-pw:hover { color:var(--navy); }
+  .card-actions { display:flex; gap:8px; margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
+  .card-note { font-size:12px; color:var(--muted); margin-top:10px; padding:8px 10px; background:var(--cream); border-radius:6px; line-height:1.5; font-style:italic; }
+  .owner-tag { display:inline-block; margin-bottom:6px; background:var(--navy); color:var(--gold-light); font-size:10px; padding:3px 8px; border-radius:20px; font-weight:500; }
+
+  /* ─── MODAL ─── */
+  .modal-overlay { position:fixed; inset:0; background:rgba(26,39,68,0.5); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px; backdrop-filter:blur(3px); }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--warm-white); border-radius:20px; padding:36px 32px; width:100%; max-width:480px; box-shadow:var(--shadow-lg); max-height:90vh; overflow-y:auto; }
+  .modal-title { font-family:'Playfair Display',serif; font-size:22px; color:var(--navy); margin-bottom:24px; font-weight:600; }
+  .modal-actions { display:flex; gap:10px; margin-top:24px; }
+  .modal-actions .btn { flex:1; }
+
+  /* ─── ADMIN TABLE ─── */
+  .users-table { width:100%; border-collapse:collapse; background:var(--warm-white); border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:var(--shadow); }
+  .users-table th { background:var(--navy); color:var(--gold-light); padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.8px; font-weight:500; }
+  .users-table td { padding:14px 16px; border-bottom:1px solid var(--border); font-size:14px; }
+  .users-table tr:last-child td { border-bottom:none; }
+  .users-table tr:hover td { background:var(--cream); }
+  .role-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+  .role-admin { background:rgba(201,168,76,0.15); color:var(--gold-dark); }
+  .role-member { background:rgba(26,39,68,0.08); color:var(--navy); }
+
+  /* ─── SEARCH / MISC ─── */
+  .search-bar { position:relative; margin-bottom:20px; }
+  .search-bar input { padding-left:40px; background:var(--warm-white); }
+  .search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:15px; }
+  .empty-state { text-align:center; padding:60px 20px; color:var(--muted); grid-column:1/-1; }
+  .empty-state .empty-icon { font-size:48px; margin-bottom:16px; opacity:0.4; }
+  .empty-state h3 { font-family:'Playfair Display',serif; font-size:20px; color:var(--navy); margin-bottom:8px; }
+  .empty-state p { font-size:14px; margin-bottom:20px; }
+  .divider { height:1px; background:var(--border); margin:28px 0; }
+  .section-tag { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; font-weight:600; margin:24px 0 10px; grid-column:1/-1; }
+  .spinner { text-align:center; padding:40px; color:var(--muted); font-size:14px; grid-column:1/-1; }
+  .cat-banking{color:#2b6cb0} .cat-email{color:#c05621} .cat-social{color:#553c9a}
+  .cat-medical{color:#276749} .cat-shopping{color:#c53030} .cat-government{color:#1a365d} .cat-other{color:var(--slate)}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div id="login-card" class="auth-card">
+    <div class="vault-logo">
+      <div class="vault-icon">
+        <svg width="28" height="28" fill="none" stroke="#c9a84c" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          <circle cx="12" cy="16" r="1" fill="#c9a84c"/>
+        </svg>
+      </div>
+      <h1>Family Vault</h1>
+      <p>Secure passwords for everyone you love</p>
+    </div>
+    <div id="login-error" class="error-msg"></div>
+    <div class="form-group"><label>Username</label><input type="text" id="login-username" placeholder="Your username" autocomplete="username"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="Your password" autocomplete="current-password"></div>
+    <button class="btn btn-primary" onclick="doLogin()">Sign In to Vault</button>
+    <div class="auth-switch">New family member? <a onclick="showRegister()">Create account</a></div>
+    <div class="hint-box"><strong style="color:var(--navy);">🔑 First time?</strong> The first person to register becomes the admin. You'll need the Family Access Code from your admin to register.</div>
+  </div>
+
+  <div id="register-card" class="auth-card" style="display:none;">
+    <div class="vault-logo">
+      <div class="vault-icon">
+        <svg width="28" height="28" fill="none" stroke="#c9a84c" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <h1>Join Family Vault</h1>
+      <p>Create your personal vault account</p>
+    </div>
+    <div id="reg-error" class="error-msg"></div>
+    <div id="reg-success" class="success-msg"></div>
+    <div class="form-group"><label>Full Name</label><input type="text" id="reg-name" placeholder="e.g. Grandma Helen"></div>
+    <div class="form-group"><label>Username</label><input type="text" id="reg-username" placeholder="Choose a username"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="reg-password" placeholder="Create a password"></div>
+    <div class="form-group"><label>Family Access Code</label><input type="password" id="reg-code" placeholder="Get this from your family admin"></div>
+    <button class="btn btn-primary" onclick="doRegister()">Create Account</button>
+    <div class="auth-switch">Already have an account? <a onclick="showLogin()">Sign in</a></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="header">
+    <div class="header-brand">🔐 <span>Family</span>&nbsp;Vault</div>
+    <div class="header-right">
+      <div class="user-badge">
+        <span id="header-crown" style="display:none;">👑</span>
+        <span id="header-username"></span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('my-vault')">🔒 My Vault</button>
+      <button class="tab-btn" onclick="showTab('add-entry')">+ Add Entry</button>
+      <button class="tab-btn" id="tab-family-btn" onclick="showTab('family-view')" style="display:none;">👨‍👩‍👧 Family View</button>
+      <button class="tab-btn" id="tab-admin-btn" onclick="showTab('admin')" style="display:none;">⚙️ Admin</button>
+    </div>
+
+    <!-- MY VAULT -->
+    <div id="tab-my-vault">
+      <div class="section-header">
+        <h2 class="section-title">My Passwords</h2>
+        <button class="btn btn-gold btn-sm" onclick="showTab('add-entry')">+ Add New</button>
+      </div>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Search passwords…" oninput="renderVault()">
+      </div>
+      <div id="vault-grid" class="vault-grid"><div class="spinner">Loading…</div></div>
+    </div>
+
+    <!-- ADD ENTRY -->
+    <div id="tab-add-entry" style="display:none;">
+      <h2 class="section-title" id="form-heading" style="margin-bottom:24px;">Add New Entry</h2>
+      <div style="max-width:520px; background:var(--warm-white); border:1px solid var(--border); border-radius:16px; padding:32px; box-shadow:var(--shadow);">
+        <input type="hidden" id="edit-id">
+        <div class="form-group"><label>Entry Name *</label><input type="text" id="f-name" placeholder="e.g. Chase Bank, Gmail, Netflix"></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+          <div class="form-group">
+            <label>Category</label>
+            <select id="f-category">
+              <option value="Banking">🏦 Banking</option>
+              <option value="Email">📧 Email</option>
+              <option value="Social">📱 Social Media</option>
+              <option value="Medical">🏥 Medical</option>
+              <option value="Shopping">🛒 Shopping</option>
+              <option value="Government">🏛️ Government</option>
+              <option value="Other" selected>📁 Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Website (optional)</label><input type="url" id="f-url" placeholder="https://..."></div>
+        </div>
+        <div class="form-group"><label>Username / Email</label><input type="text" id="f-username" placeholder="Login username or email"></div>
+        <div class="form-group"><label>Password</label><input type="text" id="f-password" placeholder="Password"></div>
+        <div class="form-group"><label>PIN (if applicable)</label><input type="text" id="f-pin" placeholder="e.g. ATM PIN"></div>
+        <div class="form-group"><label>Notes / Hints</label><textarea id="f-notes" placeholder="Security questions, account numbers, reminders…"></textarea></div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" onclick="clearForm(); showTab('my-vault')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveEntry()">Save Entry</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAMILY VIEW -->
+    <div id="tab-family-view" style="display:none;">
+      <div class="section-header">
+        <h2 class="section-title">👨‍👩‍👧 Family Vault</h2>
+      </div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:20px;">As the family admin, you can view all members' entries to help when needed.</p>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="family-search" placeholder="Search all members…" oninput="renderFamilyVault()">
+      </div>
+      <div id="family-vault-grid" class="vault-grid"><div class="spinner">Loading…</div></div>
+    </div>
+
+    <!-- ADMIN -->
+    <div id="tab-admin" style="display:none;">
+      <h2 class="section-title" style="margin-bottom:8px;">⚙️ Admin Panel</h2>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:28px;">Manage family members and vault settings.</p>
+
+      <div class="section-header">
+        <h3 style="font-size:16px; font-weight:600; color:var(--navy);">Family Members</h3>
+        <button class="btn btn-gold btn-sm" onclick="openAddUserModal()">+ Add Member</button>
+      </div>
+      <table class="users-table">
+        <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Entries</th><th>Actions</th></tr></thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+
+      <div class="divider"></div>
+      <h3 style="font-size:16px; font-weight:600; color:var(--navy); margin-bottom:12px;">Family Access Code</h3>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Share this with family members so they can register. Change it anytime.</p>
+      <div style="display:flex; gap:10px; align-items:center; max-width:420px; flex-wrap:wrap;">
+        <input type="password" id="family-code-display" readonly style="flex:1; background:var(--cream); min-width:160px;">
+        <button class="btn btn-outline btn-sm" onclick="toggleFamilyCode()">Show</button>
+        <button class="btn btn-outline btn-sm" onclick="changeFamilyCode()">Change</button>
+      </div>
+
+      <div class="divider"></div>
+      <h3 style="font-size:16px; font-weight:600; color:var(--navy); margin-bottom:12px;">Data Backup</h3>
+      <button class="btn btn-outline btn-sm" onclick="exportData()">📤 Download Backup</button>
+      <p style="font-size:12px; color:var(--muted); margin-top:8px;">Creates a JSON backup of all vault data. Store it somewhere safe!</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="add-user-modal">
+  <div class="modal">
+    <h2 class="modal-title">Add Family Member</h2>
+    <div id="add-user-error" class="error-msg"></div>
+    <div class="form-group"><label>Full Name</label><input type="text" id="new-name" placeholder="e.g. Dad, Grandma Helen"></div>
+    <div class="form-group"><label>Username</label><input type="text" id="new-username" placeholder="Choose a username"></div>
+    <div class="form-group"><label>Initial Password</label><input type="text" id="new-password" placeholder="They can change this after logging in"></div>
+    <div class="form-group"><label>Role</label>
+      <select id="new-role"><option value="member">Member</option><option value="admin">Admin (full access)</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('add-user-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="createUser()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="change-pw-modal">
+  <div class="modal">
+    <h2 class="modal-title">Reset Member Password</h2>
+    <div id="change-pw-error" class="error-msg"></div>
+    <input type="hidden" id="change-pw-uid">
+    <div class="form-group"><label>New Password</label><input type="text" id="change-pw-new" placeholder="Enter new password"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('change-pw-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doChangePassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────────────
+let currentUser = null;
+let myEntries = [];
+let allEntries = [];
+const catIcons = { Banking:'🏦', Email:'📧', Social:'📱', Medical:'🏥', Shopping:'🛒', Government:'🏛️', Other:'📁' };
+
+// ─── API HELPER ───────────────────────────────────────────────────
+async function api(method, url, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin' };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  return res.json();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+(async () => {
+  try {
+    const data = await api('GET', '/api/me');
+    if (data.id) { currentUser = data; enterApp(); }
+  } catch {}
+})();
+
+// ─── AUTH ─────────────────────────────────────────────────────────
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  if (!username || !password) { showEl(errEl, 'Please enter your username and password.'); return; }
+  const data = await api('POST', '/api/login', { username, password });
+  if (data.error) { showEl(errEl, data.error); return; }
+  errEl.style.display = 'none';
+  currentUser = data.user;
+  enterApp();
+}
+
+async function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const username = document.getElementById('reg-username').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const familyCode = document.getElementById('reg-code').value;
+  const errEl = document.getElementById('reg-error');
+  const sucEl = document.getElementById('reg-success');
+  if (!name || !username || !password || !familyCode) { showEl(errEl, 'All fields required.'); return; }
+  const data = await api('POST', '/api/register', { name, username, password, familyCode });
+  if (data.error) { showEl(errEl, data.error); return; }
+  errEl.style.display = 'none';
+  showEl(sucEl, 'Account created! Signing you in…');
+  setTimeout(() => { currentUser = data.user; enterApp(); }, 1000);
+}
+
+async function doLogout() {
+  await api('POST', '/api/logout');
+  currentUser = null; myEntries = []; allEntries = [];
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  showLogin();
+}
+
+function showLogin() {
+  document.getElementById('login-card').style.display = 'block';
+  document.getElementById('register-card').style.display = 'none';
+  document.getElementById('login-error').style.display = 'none';
+}
+function showRegister() {
+  document.getElementById('login-card').style.display = 'none';
+  document.getElementById('register-card').style.display = 'block';
+  document.getElementById('reg-error').style.display = 'none';
+  document.getElementById('reg-success').style.display = 'none';
+}
+
+function enterApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('header-username').textContent = currentUser.name || currentUser.username;
+  document.getElementById('header-crown').style.display = currentUser.role === 'admin' ? 'inline' : 'none';
+  document.getElementById('tab-family-btn').style.display = currentUser.role === 'admin' ? 'flex' : 'none';
+  document.getElementById('tab-admin-btn').style.display = currentUser.role === 'admin' ? 'flex' : 'none';
+  showTab('my-vault');
+  loadMyEntries();
+}
+
+// ─── ENTRIES ──────────────────────────────────────────────────────
+async function loadMyEntries() {
+  myEntries = await api('GET', '/api/entries');
+  renderVault();
+}
+
+async function loadAllEntries() {
+  allEntries = await api('GET', '/api/admin/entries');
+  renderFamilyVault();
+}
+
+function renderVault() {
+  const query = (document.getElementById('search-input').value || '').toLowerCase();
+  const entries = myEntries.filter(e =>
+    !query || e.name.toLowerCase().includes(query) || (e.username||'').toLowerCase().includes(query) || e.category.toLowerCase().includes(query)
+  );
+  const grid = document.getElementById('vault-grid');
+  if (!entries.length) {
+    grid.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🔐</div>
+      <h3>Your vault is empty</h3>
+      <p>${query ? 'No results for "'+escH(query)+'"' : 'Start adding your passwords and accounts'}</p>
+      ${!query ? `<button class="btn btn-primary btn-sm" style="width:auto;padding:10px 24px;" onclick="showTab('add-entry')">+ Add First Entry</button>` : ''}
+    </div>`;
+    return;
+  }
+  grid.innerHTML = entries.map(e => cardHTML(e, false)).join('');
+}
+
+function renderFamilyVault() {
+  const query = (document.getElementById('family-search').value || '').toLowerCase();
+  const entries = allEntries.filter(e =>
+    !query || e.name.toLowerCase().includes(query) || (e.username||'').toLowerCase().includes(query) || (e.ownerName||'').toLowerCase().includes(query)
+  );
+  const grouped = {};
+  entries.forEach(e => {
+    const key = e.ownerName || 'Unknown';
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(e);
+  });
+  const grid = document.getElementById('family-vault-grid');
+  if (!entries.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">👨‍👩‍👧</div><h3>No entries found</h3><p>Family members haven't added anything yet.</p></div>`;
+    return;
+  }
+  let html = '';
+  Object.entries(grouped).forEach(([name, list]) => {
+    html += `<div class="section-tag">${escH(name)}</div>`;
+    list.forEach(e => { html += cardHTML(e, false); });
+  });
+  grid.innerHTML = html;
+}
+
+function cardHTML(e, showOwner) {
+  const canEdit = currentUser.role === 'admin' || e.userId === currentUser.id;
+  return `<div class="vault-card">
+    ${showOwner && e.ownerName ? `<div class="owner-tag">${escH(e.ownerName)}</div>` : ''}
+    <div class="card-category cat-${(e.category||'other').toLowerCase()}">${catIcons[e.category]||'📁'} ${escH(e.category||'Other')}</div>
+    <div class="card-title">${escH(e.name)}</div>
+    ${e.url ? `<div class="card-field"><span class="field-label">URL</span><a href="${escH(e.url)}" target="_blank" rel="noopener" class="field-value" style="color:var(--gold-dark);text-decoration:none;font-size:12px;">${escH(e.url)}</a></div>` : ''}
+    ${e.username ? `<div class="card-field"><span class="field-label">Username</span><span class="field-value">${escH(e.username)}</span><button class="copy-btn" onclick="copyText(this,'${escAttr(e.username)}')">Copy</button></div>` : ''}
+    ${e.password ? `<div class="card-field"><span class="field-label">Password</span><span class="field-value field-masked" id="pw-${e.id}">••••••••••</span><button class="toggle-pw" onclick="toggleField('pw-${e.id}','${escAttr(e.password)}')">👁</button><button class="copy-btn" onclick="copyText(this,'${escAttr(e.password)}')">Copy</button></div>` : ''}
+    ${e.pin ? `<div class="card-field"><span class="field-label">PIN</span><span class="field-value field-masked" id="pin-${e.id}">••••</span><button class="toggle-pw" onclick="toggleField('pin-${e.id}','${escAttr(e.pin)}')">👁</button><button class="copy-btn" onclick="copyText(this,'${escAttr(e.pin)}')">Copy</button></div>` : ''}
+    ${e.notes ? `<div class="card-note">📝 ${escH(e.notes)}</div>` : ''}
+    ${canEdit ? `<div class="card-actions"><button class="btn btn-outline btn-sm" onclick="editEntry('${e.id}')">✏️ Edit</button><button class="btn btn-danger" onclick="deleteEntry('${e.id}')">🗑 Delete</button></div>` : ''}
+  </div>`;
+}
+
+async function saveEntry() {
+  const id = document.getElementById('edit-id').value;
+  const body = {
+    name: document.getElementById('f-name').value.trim(),
+    category: document.getElementById('f-category').value,
+    url: document.getElementById('f-url').value.trim(),
+    username: document.getElementById('f-username').value.trim(),
+    password: document.getElementById('f-password').value,
+    pin: document.getElementById('f-pin').value.trim(),
+    notes: document.getElementById('f-notes').value.trim()
+  };
+  if (!body.name) { alert('Please enter an entry name.'); return; }
+  let data;
+  if (id) {
+    data = await api('PUT', `/api/entries/${id}`, body);
+  } else {
+    data = await api('POST', '/api/entries', body);
+  }
+  if (data.error) { alert(data.error); return; }
+  clearForm();
+  await loadMyEntries();
+  showTab('my-vault');
+}
+
+function editEntry(id) {
+  const e = myEntries.find(x => x.id === id) || allEntries.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('edit-id').value = e.id;
+  document.getElementById('f-name').value = e.name || '';
+  document.getElementById('f-category').value = e.category || 'Other';
+  document.getElementById('f-url').value = e.url || '';
+  document.getElementById('f-username').value = e.username || '';
+  document.getElementById('f-password').value = e.password || '';
+  document.getElementById('f-pin').value = e.pin || '';
+  document.getElementById('f-notes').value = e.notes || '';
+  document.getElementById('form-heading').textContent = 'Edit Entry';
+  showTab('add-entry');
+}
+
+async function deleteEntry(id) {
+  if (!confirm('Delete this entry? This cannot be undone.')) return;
+  await api('DELETE', `/api/entries/${id}`);
+  await loadMyEntries();
+  if (currentUser.role === 'admin') loadAllEntries();
+}
+
+function clearForm() {
+  ['edit-id','f-name','f-url','f-username','f-password','f-pin','f-notes'].forEach(x => document.getElementById(x).value = '');
+  document.getElementById('f-category').value = 'Other';
+  document.getElementById('form-heading').textContent = 'Add New Entry';
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────
+const TAB_IDS = ['my-vault','add-entry','family-view','admin'];
+function showTab(name) {
+  TAB_IDS.forEach(t => { const el = document.getElementById('tab-'+t); if(el) el.style.display='none'; });
+  const el = document.getElementById('tab-'+name); if(el) el.style.display='block';
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const btn = [...document.querySelectorAll('.tab-btn')].find(b => (b.getAttribute('onclick')||'').includes(name));
+  if(btn) btn.classList.add('active');
+  if(name==='my-vault') renderVault();
+  if(name==='family-view') loadAllEntries();
+  if(name==='admin') loadAdminPanel();
+  if(name==='add-entry' && !document.getElementById('edit-id').value) clearForm();
+}
+
+// ─── ADMIN ────────────────────────────────────────────────────────
+async function loadAdminPanel() {
+  const users = await api('GET', '/api/admin/users');
+  const tbody = document.getElementById('users-tbody');
+  tbody.innerHTML = users.map(u => `<tr>
+    <td>${escH(u.name)}</td><td>${escH(u.username)}</td>
+    <td><span class="role-badge role-${u.role}">${u.role==='admin'?'👑 Admin':'Member'}</span></td>
+    <td>${u.entryCount}</td>
+    <td style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="openChangePw('${u.id}')">Reset PW</button>
+      ${u.id!==currentUser.id ? `<button class="btn btn-danger" onclick="deleteUser('${u.id}')">Remove</button>` : '<span style="font-size:12px;color:var(--muted);padding:6px;">(you)</span>'}
+    </td>
+  </tr>`).join('');
+  const codeData = await api('GET', '/api/admin/familycode');
+  document.getElementById('family-code-display').value = codeData.familyCode || '';
+}
+
+function openAddUserModal() {
+  document.getElementById('add-user-error').style.display = 'none';
+  ['new-name','new-username','new-password'].forEach(id => document.getElementById(id).value = '');
+  openModal('add-user-modal');
+}
+
+async function createUser() {
+  const name = document.getElementById('new-name').value.trim();
+  const username = document.getElementById('new-username').value.trim();
+  const password = document.getElementById('new-password').value;
+  const role = document.getElementById('new-role').value;
+  const errEl = document.getElementById('add-user-error');
+  if (!name || !username || !password) { showEl(errEl, 'All fields required.'); return; }
+  const data = await api('POST', '/api/admin/users', { name, username, password, role });
+  if (data.error) { showEl(errEl, data.error); return; }
+  closeModal('add-user-modal');
+  loadAdminPanel();
+}
+
+async function deleteUser(uid) {
+  if (!confirm('Remove this member and all their entries?')) return;
+  await api('DELETE', `/api/admin/users/${uid}`);
+  loadAdminPanel();
+}
+
+function openChangePw(uid) {
+  document.getElementById('change-pw-uid').value = uid;
+  document.getElementById('change-pw-new').value = '';
+  document.getElementById('change-pw-error').style.display = 'none';
+  openModal('change-pw-modal');
+}
+
+async function doChangePassword() {
+  const uid = document.getElementById('change-pw-uid').value;
+  const password = document.getElementById('change-pw-new').value;
+  const errEl = document.getElementById('change-pw-error');
+  if (!password) { showEl(errEl, 'Please enter a new password.'); return; }
+  await api('PUT', `/api/admin/users/${uid}/password`, { password });
+  closeModal('change-pw-modal');
+  alert('Password updated!');
+}
+
+function toggleFamilyCode() {
+  const inp = document.getElementById('family-code-display');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+async function changeFamilyCode() {
+  const cur = document.getElementById('family-code-display').value;
+  const newCode = prompt('Enter new family access code:', cur);
+  if (!newCode || !newCode.trim()) return;
+  await api('PUT', '/api/admin/familycode', { familyCode: newCode.trim() });
+  document.getElementById('family-code-display').value = newCode.trim();
+  alert('Family code updated!');
+}
+
+async function exportData() {
+  window.open('/api/admin/export', '_blank');
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────
+function toggleField(id, val) {
+  const el = document.getElementById(id);
+  el.textContent = el.textContent.includes('•') ? val : (val.length <= 4 ? '••••' : '••••••••••');
+}
+
+function copyText(btn, val) {
+  navigator.clipboard.writeText(val).then(() => {
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function showEl(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+
+function escH(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) {
+  return String(s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
+document.getElementById('login-password').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>
