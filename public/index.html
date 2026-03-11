@@ -342,7 +342,7 @@
           <div class="form-group"><label>Note Title *</label><input type="text" id="fn-title" placeholder="e.g. Social Security Numbers, Passport Info"></div>
           <div class="form-group"><label>Note Type</label>
             <select id="fn-notetype" onchange="updateNoteFields()">
-              <option value="identity">🪪 Identity (SSN, Driver's License, Passport)</option>
+              <option value="identity">🪪 Identity (SSN, Drivers License, Passport)</option>
               <option value="insurance">🏥 Insurance / Medical IDs</option>
               <option value="financial">💰 Financial Account Numbers</option>
               <option value="vehicle">🚗 Vehicle (VIN, Plate, Title)</option>
@@ -707,7 +707,7 @@ function setEntryType(type) {
 // ── Secure note field templates ──────────────────────────────────────────────
 const NOTE_TEMPLATES = {
   identity: [
-    'Social Security Number','Driver's License Number','Driver's License State',
+    'Social Security Number','Drivers License Number','Drivers License State',
     'Passport Number','Passport Expiration','Date of Birth','Place of Birth'
   ],
   insurance: [
@@ -852,25 +852,40 @@ function cardHTML(e) {
   </div>`;
 }
 
+function safeId(s) { return s.replace(/[^a-z0-9]/gi, '_'); }
+
 function noteCardHTML(e, canEdit) {
-  const fields=e.fields||{};
-  const fieldKeys=Object.keys(fields);
-  return `<div class="vault-card">
-    ${e.ownerName&&e.userId!==currentUser.id?`<div><span class="owner-tag">${escH(e.ownerName)}</span></div>`:''}
-    <div class="secure-note-badge">🔒 Secure Note</div>
-    <div class="card-title">${escH(e.name)}</div>
-    ${fieldKeys.map(label=>`
-      <div class="note-field">
-        <span class="note-field-label">${escH(label)}</span>
-        <div class="note-field-value">
-          <span class="note-field-masked" id="nf-${e.id}-${escAttr(label).replace(/[^a-z0-9]/gi,'_')}">••••••••••</span>
-          <button class="toggle-pw" onclick="toggleNoteField('nf-${e.id}-${escAttr(label).replace(/[^a-z0-9]/gi,'_')}','${escAttr(fields[label])}')">👁</button>
-          <button class="copy-btn" onclick="copyText(this,'${escAttr(fields[label])}')">Copy</button>
-        </div>
-      </div>`).join('')}
-    ${e.extra?`<div class="card-note">📝 ${escH(e.extra)}</div>`:''}
-    ${canEdit?`<div class="card-actions"><button class="btn btn-outline btn-sm" onclick="editEntry('${e.id}')">✏️ Edit</button><button class="btn btn-danger" onclick="deleteEntry('${e.id}')">🗑 Delete</button></div>`:''}
-  </div>`;
+  const fields = e.fields || {};
+  const fieldKeys = Object.keys(fields);
+  let fHtml = '';
+  for (let i = 0; i < fieldKeys.length; i++) {
+    const label = fieldKeys[i];
+    const fid = 'nf-' + e.id + '-' + safeId(label);
+    const val = escAttr(fields[label]);
+    fHtml += '<div class="note-field">'
+      + '<span class="note-field-label">' + escH(label) + '</span>'
+      + '<div class="note-field-value">'
+      + '<span class="note-field-masked" id="' + fid + '">&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;</span>'
+      + ' <button class="toggle-pw" onclick="toggleNoteField(\'' + fid + '\',\'' + val + '\')">[show]</button>'
+      + ' <button class="copy-btn" onclick="copyText(this,\'' + val + '\')">Copy</button>'
+      + '</div></div>';
+  }
+  let html = '<div class="vault-card">';
+  if (e.ownerName && e.userId !== currentUser.id) {
+    html += '<div><span class="owner-tag">' + escH(e.ownerName) + '</span></div>';
+  }
+  html += '<div class="secure-note-badge">&#128274; Secure Note</div>';
+  html += '<div class="card-title">' + escH(e.name) + '</div>';
+  html += fHtml;
+  if (e.extra) html += '<div class="card-note">' + escH(e.extra) + '</div>';
+  if (canEdit) {
+    html += '<div class="card-actions">'
+      + '<button class="btn btn-outline btn-sm" onclick="editEntry(\'' + e.id + '\')">Edit</button>'
+      + ' <button class="btn btn-danger" onclick="deleteEntry(\'' + e.id + '\')">Delete</button>'
+      + '</div>';
+  }
+  html += '</div>';
+  return html;
 }
 
 function toggleNoteField(id, val) {
