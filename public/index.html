@@ -129,6 +129,38 @@
   .empty-state p{font-size:14px;margin-bottom:18px;}
   .divider{height:1px;background:var(--border);margin:24px 0;}
   .section-tag{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin:20px 0 8px;grid-column:1/-1;}
+  /* Category section headers */
+  .cat-section { margin-bottom: 10px; }
+  .cat-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 18px; background: var(--warm-white); border: 1px solid var(--border);
+    border-radius: 12px; cursor: pointer; user-select: none;
+    transition: box-shadow 0.2s, background 0.15s;
+    margin-bottom: 0;
+  }
+  .cat-section-header:hover { box-shadow: var(--shadow); background: #fffdf6; }
+  .cat-section-header.open { border-radius: 12px 12px 0 0; border-bottom-color: transparent; background: var(--warm-white); }
+  .cat-section-left { display: flex; align-items: center; gap: 12px; }
+  .cat-section-icon { font-size: 20px; line-height: 1; }
+  .cat-section-name { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 600; color: var(--navy); }
+  .cat-section-count { font-size: 11px; color: var(--muted); background: var(--cream); border: 1px solid var(--border); border-radius: 20px; padding: 2px 9px; font-weight: 500; }
+  .cat-section-chevron { color: var(--muted); font-size: 13px; transition: transform 0.25s; }
+  .cat-section-header.open .cat-section-chevron { transform: rotate(180deg); }
+  .cat-section-body {
+    display: none; border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 12px 12px; padding: 14px;
+    background: var(--cream);
+  }
+  .cat-section-body.open { display: block; }
+  .cat-section-body .vault-grid { gap: 12px; }
+  /* Accent bar on left of section header by category */
+  .cat-accent-banking  { border-left: 4px solid #2b6cb0; }
+  .cat-accent-email    { border-left: 4px solid #c05621; }
+  .cat-accent-social   { border-left: 4px solid #553c9a; }
+  .cat-accent-medical  { border-left: 4px solid #276749; }
+  .cat-accent-shopping { border-left: 4px solid #c53030; }
+  .cat-accent-government { border-left: 4px solid #1a365d; }
+  .cat-accent-other    { border-left: 4px solid var(--gold); }
   .spinner{text-align:center;padding:40px;color:var(--muted);font-size:14px;grid-column:1/-1;}
   .cat-banking{color:#2b6cb0}.cat-email{color:#c05621}.cat-social{color:#553c9a}
   .cat-medical{color:#276749}.cat-shopping{color:#c53030}.cat-government{color:#1a365d}.cat-other{color:var(--slate)}
@@ -239,7 +271,7 @@
         <button class="btn btn-gold btn-sm" onclick="showTab('add-entry')">+ Add New</button>
       </div>
       <div class="search-bar"><span class="search-icon">🔍</span><input type="text" id="search-input" placeholder="Search passwords…" oninput="renderVault()"></div>
-      <div id="vault-grid" class="vault-grid"><div class="spinner">Loading…</div></div>
+      <div id="vault-grid"><div class="spinner">Loading…</div></div>
     </div>
 
     <div id="tab-add-entry" style="display:none;">
@@ -281,7 +313,7 @@
       <div class="section-header"><h2 class="section-title">👨‍👩‍👧 Family Vault</h2></div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">As the family admin, you can view all members' entries that are encrypted with your shared key.</p>
       <div class="search-bar"><span class="search-icon">🔍</span><input type="text" id="family-search" placeholder="Search all members…" oninput="renderFamilyVault()"></div>
-      <div id="family-vault-grid" class="vault-grid"><div class="spinner">Loading…</div></div>
+      <div id="family-vault-grid"><div class="spinner">Loading…</div></div>
     </div>
 
     <div id="tab-admin" style="display:none;">
@@ -573,23 +605,97 @@ function clearForm() {
 // ══════════════════════════════════════════════════════
 // RENDER
 // ══════════════════════════════════════════════════════
+// Category display order and metadata
+const CAT_ORDER = ['Banking','Email','Social','Medical','Shopping','Government','Other'];
+const CAT_ACCENT = {Banking:'banking',Email:'email',Social:'social',Medical:'medical',Shopping:'shopping',Government:'government',Other:'other'};
+
 function renderVault() {
   const q=(document.getElementById('search-input').value||'').toLowerCase();
-  const entries=myEntries.filter(e=>!q||e.name.toLowerCase().includes(q)||(e.username||'').toLowerCase().includes(q)||e.category.toLowerCase().includes(q));
+  const entries=myEntries
+    .filter(e=>!q||e.name.toLowerCase().includes(q)||(e.username||'').toLowerCase().includes(q)||e.category.toLowerCase().includes(q))
+    .sort((a,b)=>a.name.localeCompare(b.name)); // alphabetical within each group
   const grid=document.getElementById('vault-grid');
-  if(!entries.length){grid.innerHTML=`<div class="empty-state"><div class="empty-icon">🔐</div><h3>Your vault is empty</h3><p>${q?'No results for "'+escH(q)+'"':'Start adding your passwords and accounts'}</p>${!q?`<button class="btn btn-primary btn-sm" style="width:auto;padding:10px 24px;" onclick="showTab('add-entry')">+ Add First Entry</button>`:''}</div>`;return;}
-  grid.innerHTML=entries.map(e=>cardHTML(e)).join('');
+  if(!entries.length){
+    grid.innerHTML=`<div class="empty-state"><div class="empty-icon">🔐</div><h3>Your vault is empty</h3><p>${q?'No results for "'+escH(q)+'"':'Start adding your passwords and accounts'}</p>${!q?`<button class="btn btn-primary btn-sm" style="width:auto;padding:10px 24px;" onclick="showTab('add-entry')">+ Add First Entry</button>`:''}</div>`;
+    return;
+  }
+  // Group by category, preserving CAT_ORDER
+  const grouped={};
+  entries.forEach(e=>{const k=e.category||'Other';if(!grouped[k])grouped[k]=[];grouped[k].push(e);});
+  const orderedKeys=[...CAT_ORDER.filter(c=>grouped[c]),...Object.keys(grouped).filter(c=>!CAT_ORDER.includes(c)).sort()];
+  // If searching, open all sections; otherwise restore saved state
+  const forceOpen=q.length>0;
+  let html='';
+  orderedKeys.forEach(cat=>{
+    const list=grouped[cat];
+    const accent=CAT_ACCENT[cat]||'other';
+    const icon=catIcons[cat]||'📁';
+    const isOpen=forceOpen||(openSections['my-vault']===undefined?true:openSections['my-vault'][cat]!==false);
+    html+=`<div class="cat-section">
+      <div class="cat-section-header ${isOpen?'open':''} cat-accent-${accent}" onclick="toggleSection('my-vault','${cat}',this)">
+        <div class="cat-section-left">
+          <span class="cat-section-icon">${icon}</span>
+          <span class="cat-section-name">${escH(cat)}</span>
+          <span class="cat-section-count">${list.length} ${list.length===1?'entry':'entries'}</span>
+        </div>
+        <span class="cat-section-chevron">${isOpen?'▲':'▼'}</span>
+      </div>
+      <div class="cat-section-body ${isOpen?'open':''}">
+        <div class="vault-grid">${list.map(e=>cardHTML(e)).join('')}</div>
+      </div>
+    </div>`;
+  });
+  grid.innerHTML=html;
+}
+
+// Track which sections are open per view
+const openSections={'my-vault':{},'family-view':{}};
+function toggleSection(view, cat, headerEl) {
+  const body=headerEl.nextElementSibling;
+  const isNowOpen=!body.classList.contains('open');
+  body.classList.toggle('open',isNowOpen);
+  headerEl.classList.toggle('open',isNowOpen);
+  if(!openSections[view])openSections[view]={};
+  openSections[view][cat]=isNowOpen;
 }
 
 function renderFamilyVault() {
   const q=(document.getElementById('family-search').value||'').toLowerCase();
-  const entries=allEntries.filter(e=>!q||(e.name||'').toLowerCase().includes(q)||(e.ownerName||'').toLowerCase().includes(q));
-  const grouped={};
-  entries.forEach(e=>{const k=e.ownerName||'Unknown';if(!grouped[k])grouped[k]=[];grouped[k].push(e);});
+  const entries=allEntries
+    .filter(e=>!q||(e.name||'').toLowerCase().includes(q)||(e.ownerName||'').toLowerCase().includes(q))
+    .sort((a,b)=>a.name.localeCompare(b.name));
   const grid=document.getElementById('family-vault-grid');
   if(!entries.length){grid.innerHTML=`<div class="empty-state"><div class="empty-icon">👨‍👩‍👧</div><h3>No entries found</h3><p>No entries to display.</p></div>`;return;}
+  // Group by member name, then by category within each member
+  const byMember={};
+  entries.forEach(e=>{const k=e.ownerName||'Unknown';if(!byMember[k])byMember[k]={};const c=e.category||'Other';if(!byMember[k][c])byMember[k][c]=[];byMember[k][c].push(e);});
+  const forceOpen=q.length>0;
   let html='';
-  Object.entries(grouped).forEach(([name,list])=>{html+=`<div class="section-tag">${escH(name)}</div>`;list.forEach(e=>{html+=cardHTML(e);});});
+  Object.keys(byMember).sort().forEach(memberName=>{
+    const cats=byMember[memberName];
+    html+=`<div style="margin-bottom:24px;"><div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--navy);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--gold-light);">👤 ${escH(memberName)}</div>`;
+    const orderedCats=[...CAT_ORDER.filter(c=>cats[c]),...Object.keys(cats).filter(c=>!CAT_ORDER.includes(c)).sort()];
+    orderedCats.forEach(cat=>{
+      const list=cats[cat];
+      const accent=CAT_ACCENT[cat]||'other';
+      const icon=catIcons[cat]||'📁';
+      const isOpen=forceOpen||(openSections['family-view'][memberName+':'+cat]!==false);
+      html+=`<div class="cat-section">
+        <div class="cat-section-header ${isOpen?'open':''} cat-accent-${accent}" onclick="toggleSection('family-view','${memberName}:${escAttr(cat)}',this)">
+          <div class="cat-section-left">
+            <span class="cat-section-icon">${icon}</span>
+            <span class="cat-section-name">${escH(cat)}</span>
+            <span class="cat-section-count">${list.length} ${list.length===1?'entry':'entries'}</span>
+          </div>
+          <span class="cat-section-chevron">${isOpen?'▲':'▼'}</span>
+        </div>
+        <div class="cat-section-body ${isOpen?'open':''}">
+          <div class="vault-grid">${list.map(e=>cardHTML(e)).join('')}</div>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
   grid.innerHTML=html;
 }
 
