@@ -2,11 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Family Vault</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#1a2744">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Family Vault">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Family Vault">
 <link rel="apple-touch-icon" href="/icon-192.png">
@@ -188,16 +191,163 @@
   .strength-bar.fair{background:#f6ad55;width:60%;}
   .strength-bar.strong{background:#68d391;width:100%;}
   .strength-label{font-size:10px;color:var(--muted);margin-top:3px;}
-  @media(max-width:600px){
-    .auth-card,.master-card{padding:32px 24px;}
-    .header{padding:0 14px;}
-    .header-brand{font-size:15px;}
+
+  /* ── INSTALL BANNER ─────────────────────────────── */
+  #install-banner{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:var(--navy);color:white;padding:14px 18px 14px;
+    padding-bottom:calc(14px + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 20px rgba(26,39,68,0.3);}
+  #install-banner.show{display:flex;align-items:center;gap:12px;}
+  .install-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--gold-dark),var(--gold));
+    border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px;}
+  .install-text{flex:1;}
+  .install-text strong{display:block;font-size:14px;color:white;}
+  .install-text span{font-size:12px;color:rgba(255,255,255,0.7);}
+  .install-btn{background:var(--gold);color:var(--navy);border:none;border-radius:8px;
+    padding:8px 16px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;
+    cursor:pointer;flex-shrink:0;white-space:nowrap;}
+  .install-close{background:none;border:none;color:rgba(255,255,255,0.5);
+    font-size:20px;cursor:pointer;padding:0 4px;flex-shrink:0;}
+
+  /* ── BOTTOM NAV (mobile only) ───────────────────── */
+  #bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;
+    background:var(--navy);border-top:1px solid rgba(255,255,255,0.1);
+    padding:8px 0;padding-bottom:calc(8px + env(safe-area-inset-bottom));
+    box-shadow:0 -2px 16px rgba(26,39,68,0.3);}
+  .bnav-items{display:flex;justify-content:space-around;align-items:center;}
+  .bnav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;
+    padding:6px 12px;border-radius:10px;transition:all 0.2s;min-width:56px;font-family:"DM Sans",sans-serif;}
+  .bnav-btn.active{color:var(--gold);}
+  .bnav-btn:active{transform:scale(0.92);}
+  .bnav-icon{font-size:20px;line-height:1;}
+  .bnav-label{font-size:10px;font-weight:500;letter-spacing:0.3px;}
+  .bnav-btn.add-btn .bnav-icon{
+    width:44px;height:44px;background:linear-gradient(135deg,var(--gold-dark),var(--gold));
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:24px;color:var(--navy);box-shadow:0 4px 12px rgba(201,168,76,0.5);
+    margin-top:-18px;}
+
+  /* ── MOBILE LAYOUT ──────────────────────────────── */
+  @media(max-width:768px){
+    /* Hide desktop tabs and header actions, show bottom nav */
+    .tabs{display:none !important;}
+    #bottom-nav{display:block;}
+    .header{padding:0 16px;height:52px;}
+    .header-brand{font-size:16px;}
     .user-badge{display:none;}
-    .main-layout{padding:18px 12px;}
+    .lock-btn{font-size:11px;padding:5px 10px;}
+    .btn-logout{font-size:11px;padding:5px 10px;}
+
+    /* Main layout gets bottom padding for nav bar */
+    .main-layout{
+      padding:16px 14px;
+      padding-bottom:calc(90px + env(safe-area-inset-bottom));
+    }
+
+    /* Auth cards full-width on mobile */
+    #auth-screen{padding:16px;align-items:flex-start;padding-top:40px;}
+    .auth-card{padding:28px 20px;border-radius:16px;}
+    .master-card{padding:28px 20px;border-radius:16px;}
+
+    /* Bigger touch targets for inputs and buttons */
+    input[type="text"],input[type="password"],input[type="url"],select,textarea{
+      padding:13px 14px;font-size:16px !important; /* 16px prevents iOS zoom */
+      border-radius:12px;
+    }
+    .btn{padding:14px;font-size:15px;border-radius:12px;}
+    .btn-sm{padding:10px 16px;font-size:13px;}
+    .gen-btn{padding:13px 14px;font-size:13px;}
+
+    /* Vault cards single column */
+    .vault-grid{grid-template-columns:1fr !important;}
+    .vault-card{border-radius:12px;}
+
+    /* Section headers easier to tap */
+    .cat-section-header{padding:15px 16px;}
+    .cat-section-name{font-size:16px;}
+
+    /* Form full-width on mobile */
+    #tab-add-entry > div{max-width:100% !important;border-radius:14px;padding:20px 16px;}
+    #tab-add-entry > h2{font-size:20px;}
+
+    /* Two-col form grid goes single on small screens */
+    #tab-add-entry [style*="grid-template-columns"]{
+      display:flex !important;flex-direction:column !important;
+    }
+
+    /* Card fields bigger tap areas */
+    .card-field{padding:9px 0;}
+    .copy-btn{padding:6px 12px;font-size:12px;}
+    .toggle-pw{padding:6px;}
+
+    /* Section title smaller */
+    .section-title{font-size:20px;}
+    .section-header{margin-bottom:14px;}
+
+    /* Search bar bigger */
+    .search-bar input{font-size:16px !important;padding:12px 14px 12px 40px;}
+
+    /* Admin table scrollable */
+    .users-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+    /* Modal full-screen on mobile */
+    .modal-overlay{align-items:flex-end;padding:0;}
+    .modal{border-radius:20px 20px 0 0;max-height:85vh;padding:24px 20px;
+      padding-bottom:calc(24px + env(safe-area-inset-bottom));}
+
+    /* Install banner above bottom nav */
+    #install-banner{bottom:calc(65px + env(safe-area-inset-bottom));}
+  }
+
+  /* ── DESKTOP keeps tabs, hides bottom nav ───────── */
+  @media(min-width:769px){
+    #bottom-nav{display:none !important;}
+    #install-banner.show{
+      bottom:20px;left:auto;right:20px;width:360px;border-radius:16px;
+      padding:14px 18px;
+    }
   }
 </style>
 </head>
 <body>
+
+<!-- INSTALL BANNER -->
+<div id="install-banner">
+  <div class="install-icon">&#128274;</div>
+  <div class="install-text">
+    <strong>Add to Home Screen</strong>
+    <span id="install-instructions">Tap Install to save Family Vault as an app</span>
+  </div>
+  <button class="install-btn" id="install-btn" onclick="installApp()">Install</button>
+  <button class="install-close" onclick="dismissInstall()" aria-label="Dismiss">&#215;</button>
+</div>
+
+<!-- BOTTOM NAV (mobile) -->
+<div id="bottom-nav" style="display:none;">
+  <div class="bnav-items">
+    <button class="bnav-btn active" id="bnav-vault" onclick="showTab('my-vault')">
+      <span class="bnav-icon">&#128274;</span>
+      <span class="bnav-label">Vault</span>
+    </button>
+    <button class="bnav-btn add-btn" id="bnav-add" onclick="showTab('add-entry')">
+      <span class="bnav-icon">+</span>
+      <span class="bnav-label">Add</span>
+    </button>
+    <button class="bnav-btn" id="bnav-family" onclick="showTab('family-view')" style="display:none;">
+      <span class="bnav-icon">&#128106;</span>
+      <span class="bnav-label">Family</span>
+    </button>
+    <button class="bnav-btn" id="bnav-admin" onclick="showTab('admin')" style="display:none;">
+      <span class="bnav-icon">&#9881;</span>
+      <span class="bnav-label">Admin</span>
+    </button>
+    <button class="bnav-btn" id="bnav-lock" onclick="lockVault()">
+      <span class="bnav-icon">&#128272;</span>
+      <span class="bnav-label">Lock</span>
+    </button>
+  </div>
+</div>
 
 <!-- AUTH -->
 <div id="auth-screen">
@@ -523,13 +673,16 @@ async function doLogout() {
   masterKey=null; currentUser=null; myEntries=[]; allEntries=[];
   clearTimeout(lockTimer); await api('POST','/api/logout');
   document.getElementById('app').style.display='none';
+  document.getElementById('bottom-nav').style.display='none';
   document.getElementById('master-screen').classList.remove('active');
   document.getElementById('auth-screen').style.display='flex'; showLogin();
 }
 
 function lockVault() {
   masterKey=null; myEntries=[]; allEntries=[]; clearTimeout(lockTimer);
-  document.getElementById('app').style.display='none'; showMasterGate(false);
+  document.getElementById('app').style.display='none';
+  document.getElementById('bottom-nav').style.display='none';
+  showMasterGate(false);
 }
 
 // ══════════════════════════════════════════════════════
@@ -579,11 +732,17 @@ async function submitMasterPw() {
 // ══════════════════════════════════════════════════════
 function enterApp() {
   document.getElementById('app').style.display='block';
+  document.getElementById('bottom-nav').style.display='block';
   document.getElementById('header-username').textContent=currentUser.name||currentUser.username;
   document.getElementById('header-crown').style.display=currentUser.role==='admin'?'inline':'none';
+  // Desktop tabs
   document.getElementById('tab-family-btn').style.display=currentUser.role==='admin'?'flex':'none';
   document.getElementById('tab-admin-btn').style.display=currentUser.role==='admin'?'flex':'none';
+  // Mobile bottom nav
+  document.getElementById('bnav-family').style.display=currentUser.role==='admin'?'flex':'none';
+  document.getElementById('bnav-admin').style.display=currentUser.role==='admin'?'flex':'none';
   showTab('my-vault'); loadMyEntries();
+  checkInstallPrompt();
 }
 function showLogin(){document.getElementById('login-card').style.display='block';document.getElementById('register-card').style.display='none';document.getElementById('login-error').style.display='none';}
 function showRegister(){document.getElementById('login-card').style.display='none';document.getElementById('register-card').style.display='block';document.getElementById('reg-error').style.display='none';document.getElementById('reg-success').style.display='none';}
@@ -898,12 +1057,20 @@ function toggleNoteField(id, val) {
 // TABS
 // ══════════════════════════════════════════════════════
 const TABS=['my-vault','add-entry','family-view','admin'];
+const BNAV_MAP={'my-vault':'bnav-vault','add-entry':'bnav-add','family-view':'bnav-family','admin':'bnav-admin'};
 function showTab(name) {
   TABS.forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display='none';});
   const el=document.getElementById('tab-'+name);if(el)el.style.display='block';
+  // Sync desktop tab buttons
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   const btn=[...document.querySelectorAll('.tab-btn')].find(b=>(b.getAttribute('onclick')||'').includes(name));
   if(btn)btn.classList.add('active');
+  // Sync mobile bottom nav
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  const bnav=document.getElementById(BNAV_MAP[name]);
+  if(bnav)bnav.classList.add('active');
+  // Scroll to top on tab change (mobile)
+  window.scrollTo(0,0);
   if(name==='my-vault')renderVault();
   if(name==='family-view')loadAllEntries();
   if(name==='admin')loadAdminPanel();
