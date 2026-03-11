@@ -180,6 +180,18 @@
   .type-toggle-btn.active { background:var(--navy); color:white; }
   .type-toggle-btn:not(.active):hover { background:var(--cream); color:var(--navy); }
   .spinner{text-align:center;padding:40px;color:var(--muted);font-size:14px;grid-column:1/-1;}
+  .member-filter-btn{width:100%;text-align:left;padding:7px 10px;border:none;border-radius:8px;
+    background:transparent;color:var(--slate);font-size:13px;cursor:pointer;
+    margin-bottom:4px;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+  .member-filter-btn:hover{background:var(--cream);color:var(--navy);}
+  .member-filter-btn.active{background:var(--navy);color:white;}
+  @media(max-width:768px){
+    #family-layout{flex-direction:column !important;}
+    #member-sidebar{width:100% !important;margin-bottom:12px;}
+    #member-list{display:flex;flex-wrap:wrap;gap:6px;}
+    #family-layout{flex-direction:column !important;}
+    .member-filter-btn{width:auto !important;margin-bottom:0 !important;}
+  }
   .cat-banking{color:#2b6cb0}.cat-email{color:#c05621}.cat-social{color:#553c9a}
   .cat-medical{color:#276749}.cat-shopping{color:#c53030}.cat-government{color:#1a365d}.cat-other{color:var(--slate)}
   .pw-row{display:flex;gap:8px;align-items:center;}
@@ -512,10 +524,18 @@
     </div>
 
     <div id="tab-family-view" style="display:none;">
-      <div class="section-header"><h2 class="section-title">👨‍👩‍👧 Family Vault</h2></div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">As the family admin, you can view all members' entries that are encrypted with your shared key.</p>
-      <div class="search-bar"><span class="search-icon">🔍</span><input type="text" id="family-search" placeholder="Search all members…" oninput="renderFamilyVault()"></div>
-      <div id="family-vault-grid"><div class="spinner">Loading…</div></div>
+      <div class="section-header"><h2 class="section-title">&#128106; Family Vault</h2></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">View all family members' vault entries grouped by person.</p>
+      <div id="family-layout" style="display:flex;gap:20px;align-items:flex-start;">
+        <div id="member-sidebar" style="width:150px;flex-shrink:0;background:var(--warm-white);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:var(--shadow);position:sticky;top:70px;">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Members</div>
+          <div id="member-list"></div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="search-bar"><span class="search-icon">&#128269;</span><input type="text" id="family-search" placeholder="Search all members..." oninput="renderFamilyVault()"></div>
+          <div id="family-vault-grid"><div class="spinner">Loading...</div></div>
+        </div>
+      </div>
     </div>
 
     <div id="tab-admin" style="display:none;">
@@ -731,17 +751,23 @@ async function submitMasterPw() {
 // ENTER APP
 // ══════════════════════════════════════════════════════
 function enterApp() {
+  // Hide all tab panels first so nothing stale shows
+  ['my-vault','add-entry','family-view','admin'].forEach(t => {
+    const el = document.getElementById('tab-'+t);
+    if (el) el.style.display = 'none';
+  });
   document.getElementById('app').style.display='block';
   document.getElementById('bottom-nav').style.display='block';
   document.getElementById('header-username').textContent=currentUser.name||currentUser.username;
   document.getElementById('header-crown').style.display=currentUser.role==='admin'?'inline':'none';
-  // Desktop tabs
+  // Desktop tabs — only show family/admin tabs for admins
   document.getElementById('tab-family-btn').style.display=currentUser.role==='admin'?'flex':'none';
   document.getElementById('tab-admin-btn').style.display=currentUser.role==='admin'?'flex':'none';
   // Mobile bottom nav
   document.getElementById('bnav-family').style.display=currentUser.role==='admin'?'flex':'none';
   document.getElementById('bnav-admin').style.display=currentUser.role==='admin'?'flex':'none';
-  showTab('my-vault'); loadMyEntries();
+  showTab('my-vault');
+  loadMyEntries();
   checkInstallPrompt();
 }
 function showLogin(){document.getElementById('login-card').style.display='block';document.getElementById('register-card').style.display='none';document.getElementById('login-error').style.display='none';}
@@ -757,13 +783,45 @@ async function loadMyEntries() {
   renderVault();
 }
 
+let activeMemberFilter = 'all';
+
 async function loadAllEntries() {
   const raw=await api('GET','/api/admin/entries');
   allEntries=[];
   for(const e of raw){
     const d=await ZK.decrypt(e.data,masterKey);
-    allEntries.push({id:e.id,userId:e.userId,ownerName:e.ownerName,...(d||{name:'[Encrypted — member must be present to view]',category:'Other',_locked:true})});
+    allEntries.push({id:e.id,userId:e.userId,ownerName:e.ownerName,...(d||{name:'[Encrypted]',category:'Other',_locked:true})});
   }
+  buildMemberSidebar();
+  renderFamilyVault();
+}
+
+function buildMemberSidebar() {
+  const names = [...new Set(allEntries.map(e => e.ownerName||'Unknown'))].sort();
+  const list = document.getElementById('member-list');
+  if (!list) return;
+  list.innerHTML = '';
+  function makeFilterBtn(label, filterId, count) {
+    const btn = document.createElement('button');
+    btn.className = 'member-filter-btn' + (activeMemberFilter===filterId ? ' active' : '');
+    if (count !== null) {
+      btn.innerHTML = escH(label) + ' <span style="opacity:0.6;font-size:11px;">(' + count + ')</span>';
+    } else {
+      btn.textContent = label;
+    }
+    btn.addEventListener('click', function() { filterMember(filterId, btn); });
+    list.appendChild(btn);
+  }
+  makeFilterBtn('All Members', 'all', null);
+  names.forEach(function(name) {
+    makeFilterBtn(name, name, allEntries.filter(e => e.ownerName===name).length);
+  });
+}
+
+function filterMember(name, btn) {
+  activeMemberFilter = name;
+  document.querySelectorAll('.member-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
   renderFamilyVault();
 }
 
