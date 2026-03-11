@@ -59,19 +59,31 @@ function decryptEntry(cipher) {
 }
 
 // ─── MIDDLEWARE ───────────────────────────────────────────────────
+// Render sits behind a reverse proxy - this is required for secure cookies to work
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 app.use(session({
-  store: new FileStore({ path: SESSIONS_DIR, ttl: 86400, retries: 0 }),
+  store: new FileStore({
+    path: SESSIONS_DIR,
+    ttl: 86400 * 7,
+    retries: 1,
+    reapInterval: 3600
+  }),
   secret: VAULT_SECRET,
   resave: false,
   saveUninitialized: false,
+  name: 'fv.sid',
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction,
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    sameSite: isProduction ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days - survives Render restarts
   }
 }));
 
