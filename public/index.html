@@ -1149,6 +1149,65 @@ function escAttr(s){return String(s||'').replace(/'/g,'&#39;').replace(/"/g,'&qu
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 document.getElementById('login-password').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('master-pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')submitMasterPw();});
+
+// ── PWA INSTALL ──────────────────────────────────────────────────────
+let deferredPrompt = null;
+let isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+let isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
+  || window.navigator.standalone === true;
+
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+
+function checkInstallPrompt() {
+  if (isInStandaloneMode) return;
+  if (sessionStorage.getItem('install-dismissed')) return;
+  setTimeout(function() {
+    var banner = document.getElementById('install-banner');
+    if (!banner) return;
+    if (isIOS) {
+      document.getElementById('install-instructions').textContent =
+        'Tap the Share button then "Add to Home Screen"';
+      var btn = document.getElementById('install-btn');
+      btn.textContent = 'How?';
+      btn.onclick = showIOSInstructions;
+      banner.classList.add('show');
+    } else if (deferredPrompt) {
+      document.getElementById('install-instructions').textContent =
+        'Save Family Vault as an app on your device';
+      banner.classList.add('show');
+    }
+  }, 2500);
+}
+
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(function() {
+    deferredPrompt = null;
+    document.getElementById('install-banner').classList.remove('show');
+  });
+}
+
+function dismissInstall() {
+  var banner = document.getElementById('install-banner');
+  if (banner) banner.classList.remove('show');
+  sessionStorage.setItem('install-dismissed', '1');
+}
+
+function showIOSInstructions() {
+  alert('To install on iPhone or iPad:\n\n1. Tap the Share button (square with arrow) at the bottom of Safari\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" in the top right\n\nFor Mac in Chrome:\n1. Look for the install icon in the address bar (monitor with down arrow)\n2. Or click the 3 dots menu > Save and share > Create shortcut\n3. Check "Open as window" then click Create');
+}
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').catch(function() {});
+  });
+}
+
 </script>
 </body>
 </html>
